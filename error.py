@@ -5,7 +5,7 @@ import text
 
 def _error(msg, p):
     while text.ch not in {text.chEOL, text.chEOT}:
-        text.nextCh()
+        text.next_ch()
     print(' ' * (p - 1), '^', sep='')
     print(msg)
     exit(1)

@@ -4,6 +4,7 @@ from enum import Enum
 from string import octdigits, hexdigits
 
 import error
+from text import next_ch
 import text
 from sets import *
 # text.chEOT = '\0' # Он нормально не импортируется
@@ -90,54 +91,53 @@ keywords = {
 
 
 def signed_integer():
-    text.nextCh()
+    next_ch()
     if text.ch in sign:
-        text.nextCh()
+        next_ch()
     if text.ch in digits:
-        text.nextCh()
+        next_ch()
         while text.ch in digits:
-            text.nextCh()
+            next_ch()
     else:
         error.expect('число')
 
 
 def traditional_comment():
-    text.nextCh()
+    next_ch()
     while True:
         if text.ch == '*':
-            text.nextCh()
+            next_ch()
             if text.ch == '/':
-                text.nextCh()
+                next_ch()
                 break
         elif text.ch == text.chEOT:
             error.lexError('Не закончен комментарий')
         else:
-            text.nextCh()
+            next_ch()
 
 
 def end_of_the_line_comment():
-    text.nextCh()
+    next_ch()
     while text.ch != text.chEOL:
-        text.nextCh()
+        next_ch()
 
 
 def octal_escape():
     first_ch = text.ch
-    text.nextCh()
+    next_ch()
     if text.ch in octdigits:
-        text.nextCh()
+        next_ch()
         if text.ch in octdigits:
             if first_ch in '0123':
-                text.nextCh()
+                next_ch()
             else:
                 error.lexError('Первая цифра после \\ должна быть от 0 до 3')
 
 
 def escape_sequence():
-    text.nextCh()
-    print('first ch in escape =', text.ch)
+    next_ch()
     if text.ch in 'btnfr\"\'\\':
-        text.nextCh()
+        next_ch()
     elif text.ch in octdigits:
         octal_escape()
     else:
@@ -147,159 +147,158 @@ def escape_sequence():
 def next_lex():
     global name
     while text.ch in {text.chSPACE, text.chHT, text.chEOL, text.chFF}:
-        text.nextCh()
+        next_ch()
     match text.ch:
+
         # Идентификаторы
         case _ if text.ch in java_letter:
             name = text.ch
-            text.nextCh()
+            next_ch()
             while text.ch in java_letter_or_digit:
                 name += text.ch
-                text.nextCh()
-            print('name =', name)
-            print(keywords.get(name, Lex.NAME))
+                next_ch()
             return keywords.get(name, Lex.NAME)
 
         # Литералы
         case _ if text.ch in digits:
             if text.ch == '0':
-                text.nextCh()
+                next_ch()
                 if text.ch in 'xX':
-                    text.nextCh()
+                    next_ch()
                     if text.ch in hexdigits:
-                        text.nextCh()
+                        next_ch()
                     else:
                         error.expect('Шестнадцатеричная цифра')
                     while text.ch in hexdigits:
-                        text.nextCh()
+                        next_ch()
                 elif text.ch in octdigits:
-                    text.nextCh()
+                    next_ch()
                     while text.ch in octdigits:
-                        text.nextCh()
+                        next_ch()
                 if text.ch in '89':
-                    text.nextCh()
+                    next_ch()
                     while text.ch in '89':
-                        text.nextCh()
+                        next_ch()
                     if text.ch != '.':
                         error.expect('Восьмеричная цифра')
             while text.ch in digits:
-                text.nextCh()
+                next_ch()
             if text.ch == '.':
-                text.nextCh()
+                next_ch()
                 while text.ch in digits:
-                    text.nextCh()
+                    next_ch()
                 if text.ch in exponent_indicator:
                     signed_integer()
                 if text.ch in float_type_suffix:
-                    text.nextCh()
+                    next_ch()
                 return Lex.FLOATINGPOINTNUMBER
             elif text.ch in exponent_indicator:
                 signed_integer()
                 if text.ch in float_type_suffix:
-                    text.nextCh()
+                    next_ch()
                 return Lex.FLOATINGPOINTNUMBER
             elif text.ch in float_type_suffix:
-                text.nextCh()
+                next_ch()
                 return Lex.FLOATINGPOINTNUMBER
             else:
                 if text.ch in integer_type_suffix:
-                    text.nextCh()
+                    next_ch()
                 return Lex.INTEGERNUMBER
         case '"':  # StringLiteral
-            text.nextCh()
+            next_ch()
             while True:
                 if text.ch == '"':
-                    text.nextCh()
+                    next_ch()
                     return Lex.STRING
                 elif text.ch == '\\':
                     escape_sequence()
                 elif text.ch == text.chEOT:
                     error.lexError('Не закончена строка')
                 else:
-                    text.nextCh()
+                    next_ch()
         case "'":  # CharacterLiteral
-            text.nextCh()
+            next_ch()
             if text.ch == '\\':
                 escape_sequence()
             else:
-                text.nextCh()
+                next_ch()
             if text.ch == "'":
-                text.nextCh()
+                next_ch()
                 return Lex.CHARACTER
             else:
                 error.lexError('В \'\' кавычках должен быть ЕДИНСТВЕННЫЙ символ')
 
         # Разделители
         case '(':
-            text.nextCh()
+            next_ch()
             return Lex.LPAR
         case ')':
-            text.nextCh()
+            next_ch()
             return Lex.RPAR
         case '{':
-            text.nextCh()
+            next_ch()
             return Lex.BEGIN
         case '}':
-            text.nextCh()
+            next_ch()
             return Lex.END
         case '[':
-            text.nextCh()
+            next_ch()
             return Lex.LSQ
         case ']':
-            text.nextCh()
+            next_ch()
             return Lex.RSQ
         case ';':
-            text.nextCh()
+            next_ch()
             return Lex.SEMI
         case ',':
-            text.nextCh()
+            next_ch()
             return Lex.COMMA
         case '.':
-            text.nextCh()
+            next_ch()
             if text.ch in digits:  # Digits
-                text.nextCh()
+                next_ch()
                 while text.ch in digits:
-                    text.nextCh()
+                    next_ch()
                 if text.ch in exponent_indicator:  # ExponentPart
                     signed_integer()
                 if text.ch in float_type_suffix:
-                    text.nextCh()
+                    next_ch()
                 return Lex.FLOATINGPOINTNUMBER
             else:
                 return Lex.DOT
 
         # Операции
         case '=':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.EQEQ
             else:
                 return Lex.EQ
         case '+':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.PLUSEQ
             elif text.ch == '+':
-                text.nextCh()
+                next_ch()
                 return Lex.INC
             else:
                 return Lex.PLUS
         case '>':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.GE
             elif text.ch == '>':
-                text.nextCh()
+                next_ch()
                 if text.ch == '=':
-                    text.nextCh()
+                    next_ch()
                     return Lex.GTGE
                 elif text.ch == '>':
-                    text.nextCh()
+                    next_ch()
                     if text.ch == '=':
-                        text.nextCh()
+                        next_ch()
                         return Lex.GTGTGE
                     else:
                         return Lex.GTGTGT
@@ -308,47 +307,47 @@ def next_lex():
             else:
                 return Lex.GT
         case '<':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.LE
             elif text.ch == '<':
-                text.nextCh()
+                next_ch()
                 if text.ch == '=':
-                    text.nextCh()
+                    next_ch()
                     return Lex.LTLE
                 else:
                     return Lex.LTLT
             else:
                 return Lex.LT
         case '-':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.MINUSEQ
             elif text.ch == '-':
-                text.nextCh()
+                next_ch()
                 return Lex.DEC
             else:
                 return Lex.MINUS
         case '*':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.MULTEQ
             else:
                 return Lex.MULT
         case '!':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.NOTEQ
             else:
                 return Lex.NOT
         case '/':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.DIVEQ
             elif text.ch == '/':
                 end_of_the_line_comment()  # EndOfTheLineComment
@@ -359,45 +358,45 @@ def next_lex():
             else:
                 return Lex.DIV
         case '~':
-            text.nextCh()
+            next_ch()
             return Lex.TILDE
         case '&':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.ANDEQ
             elif text.ch == '&':
-                text.nextCh()
+                next_ch()
                 return Lex.AND
             else:
                 return Lex.BITAND
         case '?':
-            text.nextCh()
+            next_ch()
             return Lex.TERN
         case '|':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.OREQ
             elif text.ch == '|':
-                text.nextCh()
+                next_ch()
                 return Lex.OR
             else:
                 return Lex.BITOR
         case ':':
-            text.nextCh()
+            next_ch()
             return Lex.COLON
         case '^':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.CARETEQ
             else:
                 return Lex.CARET
         case '%':
-            text.nextCh()
+            next_ch()
             if text.ch == '=':
-                text.nextCh()
+                next_ch()
                 return Lex.MODEQ
             else:
                 return Lex.MOD

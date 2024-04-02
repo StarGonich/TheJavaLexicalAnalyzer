@@ -5,13 +5,13 @@ import scan
 
 
 def testText():
-    text.nextCh()
+    text.next_ch()
     while text.ch != text.chEOT:
-        text.nextCh()
+        text.next_ch()
 
 
 def Compile():
-    text.nextCh()
+    text.next_ch()
     lex = scan.next_lex()
     n = 0
     while lex != scan.Lex.EOT:
