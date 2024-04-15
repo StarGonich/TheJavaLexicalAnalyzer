@@ -15,4 +15,3 @@ def Done():
 print("Сканер языка \"Java\"")
 Init()
 pars.Compile()
-Done()

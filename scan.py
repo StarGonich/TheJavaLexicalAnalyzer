@@ -18,21 +18,19 @@ class Lex(Enum):
     PRIVATE, PROTECTED, PUBLIC, RETURN, SHORT, STATIC, SUPER, SWITCH, SYNCHRONIZED, THIS, THROW, THROWS, TRANSIENT, \
     TRY, VOID, VOLATILE, WHILE, \
     \
-    INTEGERNUMBER, FLOATINGPOINTNUMBER, LOGICAL, CHARACTER, STRING, NULL, \
+    INTEGERNUMBER, FLOATINGNUMBER, DOUBLENUMBER, TRUE, FALSE, CHARACTER, STRING, NULL, \
     \
     LPAR, RPAR, BEGIN, END, LSQ, RSQ, SEMI, COMMA, DOT, \
     \
     EQ, EQEQ, PLUS, PLUSEQ, GT, LE, MINUS, MINUSEQ, LT, GE, MULT, MULTEQ, NOT, NOTEQ, DIV, DIVEQ, \
     TILDE, AND, BITAND, ANDEQ, TERN, OR, BITOR, OREQ, COLON, INC, CARET, CARETEQ, DEC, MOD, MODEQ, \
-    LTLT, LTLE, GTGT, GTGE, GTGTGT, GTGTGE = range(101)
+    LTLT, LTLE, GTGT, GTGE, GTGTGT, GTGTGE = range(103)  # !!! float double literal, true false
 
 
-zeroes = [0] * 101
 lex_names = []
 for enum_lex in Lex:
     lex_names.append(enum_lex.name)
-lex_dict = dict(zip(lex_names, zeroes))
-# print(lex_dict)
+lex_dict = dict(zip(lex_names, [0] * len(Lex)))
 name = ''
 
 keywords = {
@@ -84,14 +82,13 @@ keywords = {
     'volatile': Lex.VOLATILE,
     'while': Lex.WHILE,
 
-    'true': Lex.LOGICAL,
-    'false': Lex.LOGICAL,
+    'true': Lex.TRUE,
+    'false': Lex.FALSE,
     'null': Lex.NULL
 }
 
 
 def signed_integer():
-    next_ch()
     if text.ch in sign:
         next_ch()
     if text.ch in digits:
@@ -99,7 +96,7 @@ def signed_integer():
         while text.ch in digits:
             next_ch()
     else:
-        error.expect('число')
+        error.lexError('Ожидается десятичное число')
 
 
 def traditional_comment():
@@ -118,7 +115,7 @@ def traditional_comment():
 
 def end_of_the_line_comment():
     next_ch()
-    while text.ch != text.chEOL:
+    while text.ch not in {text.chEOL, text.chEOT}:
         next_ch()
 
 
@@ -168,19 +165,19 @@ def next_lex():
                     if text.ch in hexdigits:
                         next_ch()
                     else:
-                        error.expect('Шестнадцатеричная цифра')
+                        error.lexError('Ожидается шестнадцатеричная цифра')
                     while text.ch in hexdigits:
                         next_ch()
                 elif text.ch in octdigits:
                     next_ch()
                     while text.ch in octdigits:
                         next_ch()
-                if text.ch in '89':
-                    next_ch()
-                    while text.ch in '89':
+                    if text.ch in '89':
                         next_ch()
-                    if text.ch != '.':
-                        error.expect('Восьмеричная цифра')
+                        while text.ch in digits:
+                            next_ch()
+                        if text.ch not in '.eEfFdD':
+                            error.lexError('Ожидается \'.\', экспонента или суффикс типа')
             while text.ch in digits:
                 next_ch()
             if text.ch == '.':
@@ -188,18 +185,32 @@ def next_lex():
                 while text.ch in digits:
                     next_ch()
                 if text.ch in exponent_indicator:
+                    next_ch()
                     signed_integer()
                 if text.ch in float_type_suffix:
-                    next_ch()
-                return Lex.FLOATINGPOINTNUMBER
+                    if text.ch in 'fF':
+                        next_ch()
+                        return Lex.FLOATINGNUMBER
+                    else:
+                        next_ch()
+                return Lex.DOUBLENUMBER
             elif text.ch in exponent_indicator:
+                next_ch()
                 signed_integer()
                 if text.ch in float_type_suffix:
-                    next_ch()
-                return Lex.FLOATINGPOINTNUMBER
+                    if text.ch in 'fF':
+                        next_ch()
+                        return Lex.FLOATINGNUMBER
+                    else:
+                        next_ch()
+                return Lex.DOUBLENUMBER
             elif text.ch in float_type_suffix:
-                next_ch()
-                return Lex.FLOATINGPOINTNUMBER
+                if text.ch in 'fF':
+                    next_ch()
+                    return Lex.FLOATINGNUMBER
+                else:
+                    next_ch()
+                return Lex.DOUBLENUMBER
             else:
                 if text.ch in integer_type_suffix:
                     next_ch()
@@ -260,10 +271,15 @@ def next_lex():
                 while text.ch in digits:
                     next_ch()
                 if text.ch in exponent_indicator:  # ExponentPart
+                    next_ch()
                     signed_integer()
                 if text.ch in float_type_suffix:
-                    next_ch()
-                return Lex.FLOATINGPOINTNUMBER
+                    if text.ch in 'fF':
+                        next_ch()
+                        return Lex.FLOATINGNUMBER
+                    else:
+                        next_ch()
+                return Lex.DOUBLENUMBER
             else:
                 return Lex.DOT
 

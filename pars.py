@@ -18,7 +18,7 @@ def Compile():
         n += 1
         scan.lex_dict[lex.name] += 1
         lex = scan.next_lex()
-        print(n, lex)
+        # print(n, lex)
     print("\nЧисло лексем:", n)
     for key in scan.lex_dict:
         if scan.lex_dict[key] != 0:

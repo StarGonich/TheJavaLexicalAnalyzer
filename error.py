@@ -12,7 +12,7 @@ def _error(msg, p):
 
 
 def lexError(msg):
-    _error(msg, loc.pos)
+    _error('Лексическая ошибка: ' + msg, loc.pos)
 
 
 def expect(msg):
